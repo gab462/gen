@@ -1,0 +1,5 @@
+gen
+main
+*.o
+*.dSYM
+array.h
