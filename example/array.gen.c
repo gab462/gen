@@ -15,9 +15,9 @@ push(Array(T) *arr, T item)
 
 static
 void
-delete(Array(T) *arr)
+delete(Array(T) arr)
 {
-	free(arr->items);
+	free(arr.items);
 }
 
 typeof(array(T)) array(T) = {

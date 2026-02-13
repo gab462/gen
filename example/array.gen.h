@@ -5,5 +5,5 @@ typedef struct {
 
 extern struct {
 	void (*push)(Array(T) *arr, T item);
-	void (*delete)(Array(T) *arr);
+	void (*delete)(Array(T) arr);
 } array(T);

@@ -1,4 +1,4 @@
-#include "gen.h"
+#include "../gen.h"
 
 #define arrlen(arr) (sizeof(arr) / sizeof((arr)[0]))
 

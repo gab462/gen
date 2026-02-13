@@ -11,7 +11,7 @@ main.o: main.c array.h
 array.h: gen
 	./gen
 
-gen: gen.c gen.h
+gen: gen.c ../gen.h
 	$(CC) $(CFLAGS) -D"CC=\"$(CC) \"" -D"CFLAGS=\"$(CFLAGS) \"" -D"LDFLAGS=\"$(LDFLAGS) \"" -o $@ $< $(LDFLAGS)
 
 .PHONY: clean
