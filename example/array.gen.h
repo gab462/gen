@@ -4,7 +4,7 @@ typedef struct {
 } Array(T);
 
 void
-array_push(T)(Array(T) *self, T item)
+array_push(Array(T) *self, T item)
 {
     if (self->len + 1 > self->cap) {
         self->cap = (self->cap + 1) * 2;
@@ -14,7 +14,7 @@ array_push(T)(Array(T) *self, T item)
 }
 
 void
-array_delete(T)(Array(T) *self)
+array_delete(Array(T) *self)
 {
     free(self->items);
 }

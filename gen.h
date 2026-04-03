@@ -17,7 +17,7 @@ gen_declaration(FILE *output, GenModule mod, char *type, int index)
     fprintf(output, "#define %s %s\n", mod.typename, type);
     fprintf(output, "#define %s(...) %s__generic_%d\n", mod.name, mod.name, index);
     gen_foreach(func, mod.member_functions)
-        fprintf(output, "#define %s(...) %s__generic_%d\n", *func, *func, index);
+        fprintf(output, "#define %s %s__generic_%d\n", *func, *func, index);
 
     fprintf(output, "#include \"%s\"\n", mod.source);
 
