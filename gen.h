@@ -1,124 +1,81 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-
-#ifndef CC
-#define CC "cc "
-#endif
 
 typedef struct {
-	char buf[1024];
-	int end;
-} Cmd;
+    char *source;
+    char *output;
+    char *name;
+    char *typename;
+    char **member_functions;
+    char **types;
+} GenModule;
+
+#define gen_foreach(it, arr) for (char **it = arr; *it != NULL; ++it)
 
 void
-cmd_append(Cmd *cmd, char *fmt, ...)
+gen_declaration(FILE *output, GenModule mod, char *type, int index)
 {
-	va_list args;
-	va_start(args, fmt);
-	cmd->end += vsnprintf(cmd->buf + cmd->end, sizeof(cmd->buf) - cmd->end, fmt, args);
-	va_end(args);
+    fprintf(output, "#define %s %s\n", mod.typename, type);
+    fprintf(output, "#define %s(...) %s__generic_%d\n", mod.name, mod.name, index);
+    gen_foreach(func, mod.member_functions)
+        fprintf(output, "#define %s(...) %s__generic_%d\n", *func, *func, index);
+
+    fprintf(output, "#include \"%s\"\n", mod.source);
+
+    fprintf(output, "#undef %s\n", mod.name);
+    gen_foreach(func, mod.member_functions)
+        fprintf(output, "#undef %s\n", *func);
+    fprintf(output, "#undef %s\n", mod.typename);
+    fprintf(output, "\n");
 }
 
 void
-gen_declaration(FILE *header, char *param, char *param_type, char *name, char *gen_types[], int gen_type_count, int index)
+gen_type_accessor(FILE *output, GenModule mod)
 {
-	fprintf(header, "#define %s %s\n", param, param_type);
-	fprintf(header, "#define %s(...) %s__generic_%d\n", name, name, index);
-	for (int i = 0; i < gen_type_count; i++)
-		fprintf(header, "#define %s(...) %s__generic_%d\n",
-			gen_types[i], gen_types[i], index);
+    fprintf(output, "#define %s(%s) typeof(_Generic((%s){0}, \\\n",
+            mod.name, mod.typename, mod.typename);
 
-	fprintf(header, "#include \"%s.gen.h\"\n", name);
+    int i = 0;
+    gen_foreach(type, mod.types) {
+        fprintf(output, "   %s: (%s__generic_%d){0}", *type, mod.name, i++);
+        if (*(type + 1) != NULL)
+            fprintf(output, ",");
+        fprintf(output, " \\\n");
+    }
 
-	fprintf(header, "#undef %s\n", name);
-	for (int i = 0; i < gen_type_count; i++)
-		fprintf(header, "#undef %s\n", gen_types[i]);
-	fprintf(header, "#undef %s\n", param);
-	fprintf(header, "\n");
+    fprintf(output, "))\n\n");
 }
 
 void
-gen_module_accessor(FILE *header, char *name, char *param, char *param_types[], int param_type_count)
+gen_function_accessor(FILE *output, GenModule mod, char *function)
 {
-	fprintf(header, "#define %s(%s) _Generic((%s){0}, \\\n",
-		name, param, param);
+    fprintf(output, "#define %s(self, ...) _Generic(self, \\\n", function);
 
-	for (int i = 0; i < param_type_count; i++) {
-		fprintf(header, "	%s: %s__generic_%d", param_types[i], name, i);
-		if (i + 1 != param_type_count)
-			fprintf(header, ",");
-		fprintf(header, " \\\n");
-	}
+    int i = 0;
+    gen_foreach(type, mod.types) {
+        fprintf(output, "   %s__generic_%d *: %s__generic_%d",
+                mod.name, i, function, i);
+        i++;
+        if (*(type + 1) != NULL)
+            fprintf(output, ",");
+        fprintf(output, " \\\n");
+    }
 
-	fprintf(header, ")\n\n");
+    fprintf(output, ")(self __VA_OPT__(,) __VA_ARGS__)\n\n");
 }
 
 void
-gen_type_accessor(FILE *header, char *gen_type, char *param, char *param_types[], int param_type_count)
+gen(GenModule mod)
 {
-	fprintf(header, "#define %s(%s) typeof(_Generic((%s){0}, \\\n",
-		gen_type, param, param);
+    FILE *output = fopen(mod.output, "w+");
 
-	for (int i = 0; i < param_type_count; i++) {
-		fprintf(header, "	%s: (%s__generic_%d){0}",
-			param_types[i], gen_type, i);
-		if (i + 1 != param_type_count)
-			fprintf(header, ",");
-		fprintf(header, " \\\n");
-	}
+    int i = 0;
+    gen_foreach(type, mod.types)
+        gen_declaration(output, mod, *type, i++);
 
+    gen_type_accessor(output, mod);
 
-	fprintf(header, "))\n\n");
-}
+    gen_foreach(func, mod.member_functions)
+        gen_function_accessor(output, mod, *func);
 
-void
-gen_header(char *name, char *param, char *param_types[], int param_type_count, char *gen_types[], int gen_type_count)
-{
-	char path[255] = {0};
-	snprintf(path, sizeof(path), "%s.h", name);
-
-	FILE *header = fopen(path, "w+");
-
-	for (int i = 0; i < param_type_count; i++) {
-		gen_declaration(header, param, param_types[i], name, gen_types, gen_type_count, i);
-	}
-
-	gen_module_accessor(header, name, param, param_types, param_type_count);
-
-	for (int i = 0; i < gen_type_count; i++) {
-		gen_type_accessor(header, gen_types[i], param, param_types, param_type_count);
-	}
-
-	fclose(header);
-}
-
-void
-gen_object(char *param, char *param_type, char *name, char *gen_types[], int gen_type_count, int index)
-{
-	Cmd cmd = {0};
-
-	cmd_append(&cmd, CC);
-	cmd_append(&cmd, "-c ");
-
-#ifdef CFLAGS
-	cmd_append(&cmd, CFLAGS);
-#endif
-
-	for (int i = 0; i < gen_type_count; i++) 
-		cmd_append(&cmd, "-D'%s(...)=%s__generic_%d' ",
-			gen_types[i], gen_types[i], index);
-
-	cmd_append(&cmd, "-D'%s(...)=%s__generic_%d' ", name, name, index);
-
-	cmd_append(&cmd, "-D'%s=%s' ", param, param_type);
-
-	cmd_append(&cmd, "%s.gen.c -o %s__generic_%d.o ", name, name, index);
-
-#ifdef LDFLAGS
-	cmd_append(&cmd, LDFLAGS);
-#endif
-
-	printf("%s\n", cmd.buf);
-	system(cmd.buf);
+    fclose(output);
 }

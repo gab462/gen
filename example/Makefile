@@ -2,18 +2,15 @@ CC := clang
 CFLAGS := -std=c23 -pedantic -Wall -Wextra -Wshadow
 LDFLAGS := -fsanitize=address,undefined -ggdb
 
-main: main.o
-	$(CC) -o $@ *.o $(LDFLAGS)
+main: main.c array.h
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
-main.o: main.c array.h
-	$(CC) $(CFLAGS) -o $@ -c $< $(LDFLAGS)
-
-array.h: gen
+array.h: gen array.gen.h
 	./gen
 
 gen: gen.c ../gen.h
-	$(CC) $(CFLAGS) -D"CC=\"$(CC) \"" -D"CFLAGS=\"$(CFLAGS) \"" -D"LDFLAGS=\"$(LDFLAGS) \"" -o $@ $< $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 .PHONY: clean
 clean:
-	rm -rf gen array.h *.o main *.dSYM
+	rm -rf gen array.h main *.dSYM
