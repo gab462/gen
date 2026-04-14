@@ -29,13 +29,13 @@ gen_declaration(FILE *output, GenModule mod, char *type, int index)
 }
 
 void
-gen_type_accessor(FILE *output, GenModule mod)
+gen_type_accessor(FILE *output, GenModule mod, char **types)
 {
     fprintf(output, "#define %s(%s) typeof(_Generic((%s){0}, \\\n",
             mod.name, mod.typename, mod.typename);
 
     int i = 0;
-    gen_foreach(type, mod.types) {
+    gen_foreach(type, types) {
         fprintf(output, "   %s: (%s__generic_%d){0}", *type, mod.name, i++);
         if (*(type + 1) != NULL)
             fprintf(output, ",");
@@ -46,12 +46,12 @@ gen_type_accessor(FILE *output, GenModule mod)
 }
 
 void
-gen_function_accessor(FILE *output, GenModule mod, char *function)
+gen_function_accessor(FILE *output, GenModule mod, char *function, char **types)
 {
     fprintf(output, "#define %s(self, ...) _Generic(self, \\\n", function);
 
     int i = 0;
-    gen_foreach(type, mod.types) {
+    gen_foreach(type, types) {
         fprintf(output, "   %s__generic_%d *: %s__generic_%d",
                 mod.name, i, function, i);
         i++;
@@ -64,18 +64,18 @@ gen_function_accessor(FILE *output, GenModule mod, char *function)
 }
 
 void
-gen(GenModule mod)
+gen(GenModule mod, char **types)
 {
     FILE *output = fopen(mod.output, "w+");
 
     int i = 0;
-    gen_foreach(type, mod.types)
+    gen_foreach(type, types)
         gen_declaration(output, mod, *type, i++);
 
-    gen_type_accessor(output, mod);
+    gen_type_accessor(output, mod, types);
 
     gen_foreach(func, mod.member_functions)
-        gen_function_accessor(output, mod, *func);
+        gen_function_accessor(output, mod, *func, types);
 
     fclose(output);
 }
