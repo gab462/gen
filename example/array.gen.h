@@ -1,3 +1,5 @@
+#ifdef GEN_INSTANTIATION
+
 typedef struct {
     T *items;
     int len, cap;
@@ -18,3 +20,28 @@ array_delete(Array(T) *self)
 {
     free(self->items);
 }
+
+#elifdef GEN_DECLARATION
+
+GenModule
+array_module(void)
+{
+    static char *member_functions[] = {
+        "array_push",
+        "array_delete",
+        NULL,
+    };
+
+    return (GenModule){
+        .source = __FILE__,
+        .name = "Array",
+        .typename = "T",
+        .member_functions = member_functions,
+    };
+}
+
+#else
+
+#error "Cannot include generic header"
+
+#endif

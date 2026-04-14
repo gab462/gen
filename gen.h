@@ -68,11 +68,21 @@ gen(GenModule mod, char *output_path, char **types)
 {
     FILE *output = fopen(output_path, "w+");
 
+    fprintf(output, "// TEMPLATE INITIALIZATION\n\n");
+
+    fprintf(output, "#define GEN_INSTANTIATION\n\n");
+
     int i = 0;
     gen_foreach(type, types)
         gen_declaration(output, mod, *type, i++);
 
+    fprintf(output, "#undef GEN_INSTANTIATION\n\n");
+
+    fprintf(output, "// TYPE ACCESSOR\n\n");
+
     gen_type_accessor(output, mod, types);
+
+    fprintf(output, "// FUNCTION ACCESSORS\n\n");
 
     gen_foreach(func, mod.member_functions)
         gen_function_accessor(output, mod, *func, types);
