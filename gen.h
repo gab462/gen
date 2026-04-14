@@ -64,9 +64,9 @@ gen_function_accessor(FILE *output, GenModule mod, char *function, char **types)
 }
 
 void
-gen(GenModule mod, char **types)
+gen(GenModule mod, char *output_path, char **types)
 {
-    FILE *output = fopen(mod.output, "w+");
+    FILE *output = fopen(output_path, "w+");
 
     int i = 0;
     gen_foreach(type, types)

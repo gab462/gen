@@ -5,7 +5,6 @@ main(void)
 {
     GenModule array = {
         .source = "array.gen.h",
-        .output = "array.h",
         .name = "Array",
         .typename = "T",
         .member_functions = (char*[]){
@@ -15,5 +14,5 @@ main(void)
         },
     };
 
-    gen(array, (char*[]){ "int", "char *", NULL });
+    gen(array, "array.h", (char*[]){ "int", "char *", NULL });
 }
