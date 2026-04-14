@@ -2,11 +2,9 @@
 
 typedef struct {
     char *source;
-    char *output;
     char *name;
     char *typename;
     char **member_functions;
-    char **types;
 } GenModule;
 
 #define gen_foreach(it, arr) for (char **it = arr; *it != NULL; ++it)
