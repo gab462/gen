@@ -24,7 +24,7 @@ array_delete(Array(T) *self)
 #elifdef GEN_DECLARATION
 
 GenModule
-array_module(void)
+gen_array(void)
 {
     static char *member_functions[] = {
         "array_push",

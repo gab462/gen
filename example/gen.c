@@ -1,10 +1,10 @@
 #include "../gen.h"
 
 #define GEN_DECLARATION
-#include "array.gen.h"
+#include "../util/array.gen.h"
 
 int
 main(void)
 {
-    gen(array_module(), "array.h", (char*[]){ "int", "char *", NULL });
+    gen(gen_array(), "array.h", (char*[]){ "int", "char *", NULL });
 }
