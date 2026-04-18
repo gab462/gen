@@ -3,3 +3,4 @@ main
 *.o
 *.dSYM
 array.h
+table.h

@@ -2,7 +2,7 @@
 
 typedef struct {
     T *items;
-    int len, cap;
+    size_t len, cap;
 } Array(T);
 
 void
@@ -16,7 +16,7 @@ array_push(Array(T) *self, T item)
 }
 
 void
-array_delete(Array(T) *self)
+array_free(Array(T) *self)
 {
     free(self->items);
 }
@@ -28,7 +28,7 @@ gen_array(void)
 {
     static char *member_functions[] = {
         "array_push",
-        "array_delete",
+        "array_free",
         NULL,
     };
 
