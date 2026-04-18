@@ -16,6 +16,20 @@ array_push(Array(T) *self, T item)
 }
 
 void
+array_resize(Array(T) *self, size_t new_cap)
+{
+    self->cap = new_cap;
+    if (self->cap < self->len) self->len = self->cap;
+    self->items = realloc(self->items, sizeof(T) * self->cap);
+}
+
+void
+array_swapdel(Array(T) *self, size_t idx)
+{
+    self->items[idx] = self->items[--self->len];
+}
+
+void
 array_free(Array(T) *self)
 {
     free(self->items);
@@ -28,6 +42,8 @@ gen_array(void)
 {
     static char *member_functions[] = {
         "array_push",
+        "array_resize",
+        "array_swapdel",
         "array_free",
         NULL,
     };
