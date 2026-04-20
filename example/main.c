@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include "array.h"
 #include "table.h"
@@ -21,9 +22,14 @@ main(void)
 
     Table(char *, size_t) table = { .hasheq = table_cstr_hasheq };
 
+    char *pool = calloc(26 * 2, sizeof(char));
+    size_t pool_bump = 0;
+
     for (size_t i = 0; i < 26; ++i) {
-        char *s = calloc(2, sizeof(char));
+        char *s = pool + pool_bump;
+        pool_bump += 2;
         s[0] = 'a' + i;
+
         table_set(&table, s, i);
     }
 
@@ -32,6 +38,7 @@ main(void)
     printf("%zu %zu %zu\n", table.count, table.cap, *table_get(&table, "z"));
 
     table_free(&table);
+    free(pool);
 
     return 0;
 }
