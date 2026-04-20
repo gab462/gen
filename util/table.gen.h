@@ -165,9 +165,11 @@ table_free(Table(K, V) *self)
 
 #elifdef GEN_DECLARATION
 
-GennModule
-genn_table(void)
+GenModule
+gen_table(void)
 {
+    static char *typenames[] = { "K", "V", NULL };
+
     static char *member_functions[] = {
         "table_hasheq",
         "table_resize",
@@ -179,9 +181,7 @@ genn_table(void)
         NULL,
     };
 
-    static char *typenames[] = { "K", "V", NULL };
-
-    return (GennModule){
+    return (GenModule){
         .source = __FILE__,
         .name = "Table",
         .typenames = typenames,

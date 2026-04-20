@@ -40,6 +40,8 @@ array_free(Array(T) *self)
 GenModule
 gen_array(void)
 {
+    static char *typenames[] = { "T", NULL };
+
     static char *member_functions[] = {
         "array_push",
         "array_resize",
@@ -51,7 +53,7 @@ gen_array(void)
     return (GenModule){
         .source = __FILE__,
         .name = "Array",
-        .typename = "T",
+        .typenames = typenames,
         .member_functions = member_functions,
     };
 }
