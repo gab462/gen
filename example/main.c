@@ -4,28 +4,6 @@
 #include "array.h"
 #include "table.h"
 
-size_t
-cstr_hasheq(void *a, void *b, size_t)
-{
-    char *k1 = *(char **) a;
-
-    if (b == NULL) {
-        // fnv-1a
-        uint64_t hash = 0xcbf29ce484222325;
-
-        for (size_t i = 0; i < strlen(k1); ++i) {
-            hash ^= (uint64_t) k1[i];
-            hash *= 0x100000001b3;
-        }
-
-        return hash;
-    } else {
-        char *k2 = *(char **) b;
-
-        return strcmp(k1, k2) == 0;
-    }
-}
-
 int
 main(void)
 {
@@ -41,7 +19,7 @@ main(void)
 
     array_free(&arr);
 
-    Table(char *, size_t) table = { .hasheq = cstr_hasheq };
+    Table(char *, size_t) table = { .hasheq = table_cstr_hasheq };
 
     for (size_t i = 0; i < 26; ++i) {
         char *s = calloc(2, sizeof(char));

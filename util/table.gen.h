@@ -5,6 +5,39 @@
 
 typedef size_t (*Table_Hasheq)(void *a, void *b, size_t len);
 
+size_t
+table_fnv1a(uint8_t *bytes, size_t len)
+{
+    uint64_t hash = 0xcbf29ce484222325;
+
+    for (size_t i = 0; i < len; ++i) {
+        hash ^= (uint64_t) bytes[i];
+        hash *= 0x100000001b3;
+    }
+
+    return hash;
+}
+
+size_t
+table_default_hasheq(void *k1, void *k2, size_t len)
+{
+    if (k2 == NULL) // hashing
+        return table_fnv1a(k1, len);
+    else // equality
+        return memcmp(k1, k2, sizeof(K)) == 0;
+}
+
+size_t
+table_cstr_hasheq(void *a, void *b, size_t)
+{
+    char *k1 = *(char **) a;
+
+    if (b == NULL)
+        return table_fnv1a((uint8_t *) k1, strlen(k1));
+    else
+        return strcmp(k1, *(char **) b) == 0;
+}
+
 #endif
 
 typedef struct {
@@ -18,25 +51,9 @@ typedef struct {
 size_t
 table_hasheq(Table(K, V) *self, K *k1, K *k2)
 {
-    if (self->hasheq) {
-        return self->hasheq(k1, k2, sizeof(K));
-    } else {
-        if (k2 == NULL) {
-            // hash - fnv-1a
-            uint8_t *bytes = (void *) k1;
-            uint64_t hash = 0xcbf29ce484222325;
+    Table_Hasheq hasheq = self->hasheq ? self->hasheq : table_default_hasheq;
 
-            for (size_t i = 0; i < sizeof(K); ++i) {
-                hash ^= (uint64_t) bytes[i];
-                hash *= 0x100000001b3;
-            }
-
-            return hash;
-        } else {
-            // equality - compare bytes
-            return memcmp(k1, k2, sizeof(K)) == 0;
-        }
-    }
+    return hasheq(k1, k2, sizeof(K));
 }
 
 void table_set(Table(K, V) *self, K key, V value);
