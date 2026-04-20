@@ -56,7 +56,7 @@ table_resize(Table_Impl(KV) *self, size_t new_cap)
     self->values = malloc(new_cap * sizeof(V));
     self->active = calloc(new_cap, sizeof(bool));
     self->cap = new_cap;
-    self->len = 0;
+    self->count = 0;
 
     for (size_t i = 0; i < old.cap; ++i) {
         if (old.active[i])
