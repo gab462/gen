@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -13,10 +14,15 @@ typedef struct {
 void
 gen_declaration(FILE *output, GenModule mod, char **types, int index)
 {
+    // Set each typename to correspondent type
     int i = 0;
     gen_foreach(typename, mod.typenames)
         fprintf(output, "#define %s %s\n", *typename, types[i++]);
+
+    // Define concrete type
     fprintf(output, "#define %s(...) %s__generic_%d\n", mod.name, mod.name, index);
+
+    // Define concrete function names
     gen_foreach(func, mod.member_functions)
         fprintf(output, "#define %s %s__generic_%d\n", *func, *func, index);
 
@@ -44,6 +50,7 @@ gen_print_typenames(void *output, GenModule mod)
 void
 gen_type_accessor(FILE *output, GenModule mod, char ***typelists)
 {
+    // Dispatch on function pointer type with typenames as arguments
     fprintf(output, "#define %s(", mod.name);
     gen_print_typenames(output, mod);
     fprintf(output, ") typeof(_Generic((void (*)(");
@@ -55,6 +62,7 @@ gen_type_accessor(FILE *output, GenModule mod, char ***typelists)
 
     int i = 0;
     gen_foreach(types, typelists) {
+        // Dispatch on function pointer for actual types
         fprintf(output, "   void (*)(");
         for (int j = 0; j < typename_count; ++j) {
             fprintf(output, "%s", (*types)[j]);
@@ -71,16 +79,16 @@ gen_type_accessor(FILE *output, GenModule mod, char ***typelists)
 }
 
 void
-gen_function_accessor(FILE *output, GenModule mod, char *function, void **typelists)
+gen_function_accessor(FILE *output, GenModule mod, char *function, void **args)
 {
     fprintf(output, "#define %s(self, ...) _Generic(self, \\\n", function);
 
     int i = 0;
-    gen_foreach(typelist, typelists) { // typelist only used for NULL checking
+    gen_foreach(arg, args) { // arg only used for NULL checking
         fprintf(output, "   %s__generic_%d *: %s__generic_%d",
                 mod.name, i, function, i);
         i++;
-        if (*(typelist + 1) != NULL)
+        if (*(arg + 1) != NULL)
             fprintf(output, ",");
         fprintf(output, " \\\n");
     }
@@ -118,26 +126,16 @@ gen(GenModule mod, char *output_path, char ***typelists)
 void
 gen1(GenModule mod, char *output_path, char **types)
 {
-    FILE *output = fopen(output_path, "w+");
+    int type_count = 0;
+    gen_foreach(type, types) ++type_count;
 
-    fprintf(output, "// TEMPLATE INITIALIZATION\n\n");
+    // Transform types into array of arrays of single types
+    char ***typelists = malloc(sizeof(char **) * (type_count + 1));
+    typelists[type_count] = NULL;
+    for (int i = 0; i < type_count; ++i)
+        typelists[i] = &types[i];
 
-    fprintf(output, "#define GEN_INSTANTIATION\n\n");
+    gen(mod, output_path, typelists);
 
-    int i = 0;
-    gen_foreach(type, types)
-        gen_declaration(output, mod, type, i++);
-
-    fprintf(output, "#undef GEN_INSTANTIATION\n\n");
-
-    fprintf(output, "// TYPE ACCESSOR\n\n");
-
-    gen_type_accessor(output, mod, (char **[]){ types, NULL });
-
-    fprintf(output, "// FUNCTION ACCESSORS\n\n");
-
-    gen_foreach(func, mod.member_functions)
-        gen_function_accessor(output, mod, *func, (void **) types);
-
-    fclose(output);
+    free(typelists);
 }
