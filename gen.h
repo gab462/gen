@@ -60,9 +60,9 @@ gen_type_accessor(FILE *output, GenModule mod, char ***typelists)
     int typename_count = 0;
     gen_foreach(type, mod.typenames) ++typename_count;
 
+    // Define function pointer for each type combinations
     int i = 0;
     gen_foreach(types, typelists) {
-        // Dispatch on function pointer for actual types
         fprintf(output, "   void (*)(");
         for (int j = 0; j < typename_count; ++j) {
             fprintf(output, "%s", (*types)[j]);
@@ -81,8 +81,10 @@ gen_type_accessor(FILE *output, GenModule mod, char ***typelists)
 void
 gen_function_accessor(FILE *output, GenModule mod, char *function, void **args)
 {
+    // Dispatch on type of first argument
     fprintf(output, "#define %s(self, ...) _Generic(self, \\\n", function);
 
+    // Map each concrete type to concrete function
     int i = 0;
     gen_foreach(arg, args) { // arg only used for NULL checking
         fprintf(output, "   %s__generic_%d *: %s__generic_%d",
@@ -105,6 +107,7 @@ gen(GenModule mod, char *output_path, char ***typelists)
 
     fprintf(output, "#define GEN_INSTANTIATION\n\n");
 
+    // Define concrete module for each type combination
     int i = 0;
     gen_foreach(types, typelists)
         gen_declaration(output, mod, *types, i++);
@@ -113,10 +116,12 @@ gen(GenModule mod, char *output_path, char ***typelists)
 
     fprintf(output, "// TYPE ACCESSOR\n\n");
 
+    // Access concrete type based on type parameters
     gen_type_accessor(output, mod, typelists);
 
     fprintf(output, "// FUNCTION ACCESSORS\n\n");
 
+    // Access each concrete function based on self parameter
     gen_foreach(func, mod.member_functions)
         gen_function_accessor(output, mod, *func, (void **) typelists);
 
