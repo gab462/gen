@@ -3,15 +3,9 @@
 #ifndef TABLE_ONCE
 #define TABLE_ONCE
 
-#define table_make_type(K, V) struct Table_Type_##K##_##V { K key; V value; }
-#define Table(K, V) Table_Impl(table_make_type(K, V))
-
 typedef size_t (*Table_Hasheq)(void *a, void *b, size_t len);
 
 #endif
-
-#define K typeof((KV){0}.key)
-#define V typeof((KV){0}.value)
 
 typedef struct {
     K *keys;
@@ -19,10 +13,10 @@ typedef struct {
     bool *active;
     size_t count, cap;
     Table_Hasheq hasheq;
-} Table_Impl(KV);
+} Table(K, V);
 
 size_t
-table_hasheq(Table_Impl(KV) *self, K *k1, K *k2)
+table_hasheq(Table(K, V) *self, K *k1, K *k2)
 {
     if (self->hasheq) {
         return self->hasheq(k1, k2, sizeof(K));
@@ -45,12 +39,12 @@ table_hasheq(Table_Impl(KV) *self, K *k1, K *k2)
     }
 }
 
-void table_set(Table_Impl(KV) *self, K key, V value);
+void table_set(Table(K, V) *self, K key, V value);
 
 void
-table_resize(Table_Impl(KV) *self, size_t new_cap)
+table_resize(Table(K, V) *self, size_t new_cap)
 {
-    Table_Impl(KV) old = *self;
+    Table(K, V) old = *self;
 
     self->keys = malloc(new_cap * sizeof(K));
     self->values = malloc(new_cap * sizeof(V));
@@ -69,7 +63,7 @@ table_resize(Table_Impl(KV) *self, size_t new_cap)
 }
 
 size_t
-table_index(Table_Impl(KV) *self, K key)
+table_index(Table(K, V) *self, K key)
 {
     if (self->cap == 0 || (float) self->count / self->cap > 0.75f)
         table_resize(self, self->cap > 0 ? self->cap * 2 : 16);
@@ -93,7 +87,7 @@ table_index(Table_Impl(KV) *self, K key)
 }
 
 V *
-table_get(Table_Impl(KV) *self, K key)
+table_get(Table(K, V) *self, K key)
 {
     size_t idx = table_index(self, key);
 
@@ -101,7 +95,7 @@ table_get(Table_Impl(KV) *self, K key)
 }
 
 void
-table_set(Table_Impl(KV) *self, K key, V value)
+table_set(Table(K, V) *self, K key, V value)
 {
     size_t idx = table_index(self, key);
 
@@ -109,7 +103,7 @@ table_set(Table_Impl(KV) *self, K key, V value)
 }
 
 void
-table_del(Table_Impl(KV) *self, K key)
+table_del(Table(K, V) *self, K key)
 {
     size_t idx = table_index(self, key);
 
@@ -145,20 +139,17 @@ table_del(Table_Impl(KV) *self, K key)
 }
 
 void
-table_free(Table_Impl(KV) *self)
+table_free(Table(K, V) *self)
 {
     free(self->keys);
     free(self->values);
     free(self->active);
 }
 
-#undef K
-#undef V
-
 #elifdef GEN_DECLARATION
 
-GenModule
-gen_table(void)
+GennModule
+genn_table(void)
 {
     static char *member_functions[] = {
         "table_hasheq",
@@ -171,10 +162,12 @@ gen_table(void)
         NULL,
     };
 
-    return (GenModule){
+    static char *typenames[] = { "K", "V", NULL };
+
+    return (GennModule){
         .source = __FILE__,
-        .name = "Table_Impl",
-        .typename = "KV",
+        .name = "Table",
+        .typenames = typenames,
         .member_functions = member_functions,
     };
 }
