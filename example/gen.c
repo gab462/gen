@@ -10,6 +10,7 @@ main(void)
     gen1(gen_array(), "array.h", (char*[]){ "int", "char *", NULL });
     gen(gen_table(), "table.h", (char**[]){
         (char*[]){ "char *", "size_t" },
+        (char*[]){ "char *", "float" },
         NULL,
     });
 }

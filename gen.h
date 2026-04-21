@@ -42,6 +42,7 @@ gen_print_typenames(FILE *output, GenModule mod)
     int i = 0;
     gen_foreach(type, mod.typenames) {
         fprintf(output, "%s", mod.typenames[i++]);
+
         if (mod.typenames[i] != NULL)
             fprintf(output, ", ");
     }
@@ -52,6 +53,7 @@ gen_print_types(FILE *output, char **types, int type_count)
 {
     for (int i = 0; i < type_count; ++i) {
         fprintf(output, "%s", types[i]);
+
         if (i + 1 < type_count)
             fprintf(output, ", ");
     }
@@ -70,14 +72,16 @@ gen_type_accessor(FILE *output, GenModule mod, char ***typelists)
     int typename_count = 0;
     gen_foreach(type, mod.typenames) ++typename_count;
 
-    // Define function pointer for each type combinations
+    // Define case for each type combinations
     int i = 0;
     gen_foreach(types, typelists) {
         fprintf(output, "   void (*)(");
         gen_print_types(output, *types, typename_count);
         fprintf(output, "): (%s__generic_%d){0}", mod.name, i++);
+
         if (*(types + 1) != NULL)
             fprintf(output, ",");
+
         fprintf(output, " \\\n");
     }
 
@@ -93,11 +97,12 @@ gen_function_accessor(FILE *output, GenModule mod, char *function, void **args)
     // Map each concrete type to concrete function
     int i = 0;
     gen_foreach(arg, args) { // arg only used for NULL checking
-        fprintf(output, "   %s__generic_%d *: %s__generic_%d",
-                mod.name, i, function, i);
+        fprintf(output, "   %s__generic_%d *: %s__generic_%d", mod.name, i, function, i);
         i++;
+
         if (*(arg + 1) != NULL)
             fprintf(output, ",");
+
         fprintf(output, " \\\n");
     }
 
@@ -141,8 +146,8 @@ gen1(GenModule mod, char *output_path, char **types)
     gen_foreach(type, types) ++type_count;
 
     // Transform types into array of arrays of single types
-    char ***typelists = malloc(sizeof(char **) * (type_count + 1));
-    typelists[type_count] = NULL;
+    char ***typelists = calloc(type_count + 1, sizeof(char **));
+
     for (int i = 0; i < type_count; ++i)
         typelists[i] = &types[i];
 

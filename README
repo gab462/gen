@@ -1,4 +1,4 @@
 For the cost of an additional build step, you avoid limitations such as not being able to:
-- Pass pointers and structs with tag as generic parameters without typedef
+- Pass pointer or tagged struct as a generic parameter without typedef
 - Pass the generic type as a function parameter without typedef
 - Implement user-facing interface as actual functions

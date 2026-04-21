@@ -18,8 +18,6 @@ main(void)
     for (size_t i = 0; i < arr.len; i++)
         printf("%d\n", arr.items[i]);
 
-    array_free(&arr);
-
     Table(char *, size_t) table = { .hasheq = table_cstr_hasheq };
 
     char *pool = calloc(26 * 2, sizeof(char));
@@ -28,6 +26,7 @@ main(void)
     for (size_t i = 0; i < 26; ++i) {
         char *s = pool + pool_bump;
         pool_bump += 2;
+
         s[0] = 'a' + i;
 
         table_set(&table, s, i);
@@ -37,8 +36,9 @@ main(void)
 
     printf("%zu %zu %zu\n", table.count, table.cap, *table_get(&table, "z"));
 
-    table_free(&table);
     free(pool);
+    array_free(&arr);
+    table_free(&table);
 
     return 0;
 }
