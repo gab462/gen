@@ -5,11 +5,11 @@ LDFLAGS := -fsanitize=address,undefined -ggdb
 main: main.c array.h table.h
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
-array.h table.h: gen
-	./gen
+array.h: ../util/array.gen.h
+	../gen $< int "char *" > $@
 
-gen: gen.c ../gen.h ../util/array.gen.h ../util/table.gen.h
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+table.h: ../util/table.gen.h
+	../gen $< "char *,size_t" > $@
 
 .PHONY: clean
 clean:

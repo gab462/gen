@@ -1,9 +1,12 @@
-#ifdef GEN_INSTANTIATION
+// Protect from multiple inclusion with guard
 
 #ifndef TABLE_ONCE
 #define TABLE_ONCE
 
 typedef size_t (*Table_Hasheq)(void *a, void *b, size_t len);
+
+// These functions will not be detected because the script hasn't
+// found the type definition yet
 
 size_t
 table_fnv1a(uint8_t *bytes, size_t len)
@@ -162,35 +165,3 @@ table_free(Table(K, V) *self)
     free(self->values);
     free(self->active);
 }
-
-#elifdef GEN_DECLARATION
-
-GenModule
-gen_table(void)
-{
-    static char *typenames[] = { "K", "V", NULL };
-
-    static char *member_functions[] = {
-        "table_hasheq",
-        "table_resize",
-        "table_index",
-        "table_get",
-        "table_set",
-        "table_del",
-        "table_free",
-        NULL,
-    };
-
-    return (GenModule){
-        .source = __FILE__,
-        .name = "Table",
-        .typenames = typenames,
-        .member_functions = member_functions,
-    };
-}
-
-#else
-
-#error "Cannot include generic header"
-
-#endif

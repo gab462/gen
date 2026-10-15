@@ -1,5 +1,3 @@
-#ifdef GEN_INSTANTIATION
-
 typedef struct {
     T *items;
     size_t len, cap;
@@ -43,33 +41,3 @@ array_free(Array(T) *self)
 {
     free(self->items);
 }
-
-#elifdef GEN_DECLARATION
-
-GenModule
-gen_array(void)
-{
-    static char *typenames[] = { "T", NULL };
-
-    static char *member_functions[] = {
-        "array_push",
-        "array_pop",
-        "array_swapdel",
-        "array_resize",
-        "array_free",
-        NULL,
-    };
-
-    return (GenModule){
-        .source = __FILE__,
-        .name = "Array",
-        .typenames = typenames,
-        .member_functions = member_functions,
-    };
-}
-
-#else
-
-#error "Cannot include generic header"
-
-#endif

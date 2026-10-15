@@ -1,0 +1,100 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+    func_prefix = "gen__"       # Start with gen__ placeholder prefix
+                                # to not find anything
+    func_count = 1
+
+    source = ARGV[1]
+
+    for (i = 2; i < ARGC; i++) {
+        specs[i - 1] = ARGV[i]
+        delete ARGV[i]
+    }
+}
+
+/^} .*(.*);/ {
+    type = $0
+    gsub(/^} |;$/, "", type)
+
+    type_name = type
+    gsub(/\(.*/, "", type_name)
+
+    type_args = type
+    gsub(/^[^\(]*\(|\)$/, "", type_args)
+    split(type_args, type_params, ", ")
+
+    func_prefix = tolower(type_name) "_"
+}
+
+$0 ~ "^" func_prefix ".*\(.*\)$" {
+    gsub(/\(.*/, "")
+    funcs[func_count++] = $0
+}
+
+END {
+    for (i = 1; i <= length(specs); i++) {
+        # Generate implementation for specialization
+
+        split(specs[i], spec, ",")
+
+        # Define underlying type name
+        printf "#define %s(...) gen__%s_%s\n", type_name, type_name, i
+
+        for (j = 1; j <= length(spec); j++) {
+            # Define proper types
+            printf "#define %s %s\n", type_params[j], spec[j]
+        }
+
+        for (j = 1; j <= length(funcs); j++) {
+            # Define underlying function names
+            printf "#define %s gen__%s_%s\n", funcs[j], funcs[j], i
+        }
+
+        printf "#include \"%s\"\n", source
+
+        printf "#undef %s\n", type_name
+
+        for (j = 1; j <= length(spec); j++) {
+            printf "#undef %s\n", type_params[j]
+        }
+
+        for (j = 1; j <= length(funcs); j++) {
+            printf "#undef %s\n", funcs[j]
+        }
+
+        print ""
+    }
+
+    # Define type accessor based on parameters
+
+    printf "#define %s(%s) typeof(_Generic((void (*) (%s))0, \\\n", type_name, type_args, type_args
+
+    for (i = 1; i <= length(specs); i++) {
+        printf "    void (*)(%s): (gen__%s_%s){0}", specs[i], type_name, i
+
+        if (i + 1 <= length(specs))
+            printf ","
+
+        print " \\"
+    }
+
+    print "))\n"
+
+    for (i = 1; i <= length(funcs); i++) {
+        # Generate function accessor based on specialization
+
+        printf "#define %s(self, ...) _Generic(self, \\\n", funcs[i]
+
+        for (j = 1; j <= length(specs); j++) {
+            printf "    gen__%s_%s *: gen__%s_%s", type_name, j, funcs[i], j
+
+            if (j + 1 <= length(specs))
+                printf ","
+
+            print " \\"
+        }
+
+        printf ")(self __VA_OPT__(,) __VA_ARGS__)\n\n"
+    }
+}
