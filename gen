@@ -27,7 +27,7 @@ BEGIN {
     func_prefix = tolower(type_name) "_"
 }
 
-$0 ~ "^" func_prefix ".*\(.*\)$" {
+$0 ~ "^" func_prefix ".*\\(.*\\)$" {
     gsub(/\(.*/, "")
     funcs[func_count++] = $0
 }
